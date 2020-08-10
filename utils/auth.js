@@ -14,7 +14,7 @@ const requestPromise = util.promisify(request);
  * application, which is issued an access token to make requests on behalf of
  * the authorizing user.
  *
- * test with: https://localhost:4000/api/v1/meta/protectedEndPoint
+ * test with: https://localhost:5000/api/v1/meta/protectedEndPoint
  */
 passport.use(
   new BearerStrategy(async (accessToken, done) => {

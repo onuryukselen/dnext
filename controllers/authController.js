@@ -173,7 +173,7 @@ exports.ensureSingleSignOn = async (req, res, next) => {
 };
 
 /**
- * https://localhost:4000/receivetoken?code=(authorization code)
+ * https://localhost:5000/receivetoken?code=(authorization code)
  *
  * This is part of the single sign on using the OAuth2 Authorization Code grant type.  This is the
  * redirect from the authorization server.  If you send in a bad authorization code you will get the

@@ -1,7 +1,7 @@
 const passport = require('passport');
 
 /**
- * https://localhost:4000/api/v1/meta/protectedEndPoint
+ * https://localhost:5000/api/v1/meta/protectedEndPoint
  *
  * An example protected endPoint
  *
