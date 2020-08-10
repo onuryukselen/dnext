@@ -1,0 +1,7 @@
+node_modules
+node_modules/*
+config.env
+certs/*
+.cache
+.cache/*
+.DS_Store
