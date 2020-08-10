@@ -1,7 +1,7 @@
 {
-  "name": "dmeta",
+  "name": "dnext",
   "version": "1.0.0",
-  "description": "Dmeta server for metadata tracking.",
+  "description": "Dnext server for pipeline execution.",
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
