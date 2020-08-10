@@ -83,18 +83,14 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.logout = async (req, res) => {
-  const { statusCode, body } = await getAsync({
-    url: `${process.env.SSO_URL}logout`,
-    rejectUnauthorized: false
-  });
-  console.log('statusCode', statusCode);
-  console.log('body', body);
-
   res.cookie('jwt_dn', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
-  res.status(200).json({ status: 'success' });
+  console.log('** redirect:', `${process.env.SSO_URL}?redirect_uri=${req.originalUrl}`);
+  res.redirect(`${process.env.SSO_URL}api/v1/users/logout?redirect_uri=${req.originalUrl}`);
+
+  // res.status(200).json({ status: 'success' });
 };
 
 exports.protect = catchAsync(async (req, res, next) => {
@@ -160,7 +156,7 @@ exports.isLoggedIn = async (req, res, next) => {
 exports.ensureSingleSignOn = async (req, res, next) => {
   console.log('** ensureSingleSignOn');
   // req.session.redirectURL = req.originalUrl || req.url;
-  req.session.redirectURL = '/';
+  req.session.redirectURL = req.originalUrl;
   res.redirect(
     `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${
       process.env.SSO_REDIRECT_URL
