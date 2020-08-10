@@ -22,7 +22,7 @@ const signToken = id => {
 const createSendToken = (user, statusCode, req, res) => {
   const token = signToken(user._id);
 
-  res.cookie('jwt', token, {
+  res.cookie('jwt_dn', token, {
     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
@@ -43,7 +43,7 @@ const createSendToken = (user, statusCode, req, res) => {
 const sendTokenCookie = (user, req, res) => {
   const token = signToken(user._id);
 
-  res.cookie('jwt', token, {
+  res.cookie('jwt_dn', token, {
     expires: new Date(Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000),
     httpOnly: true,
     secure: req.secure || req.headers['x-forwarded-proto'] === 'https'
@@ -83,8 +83,6 @@ exports.login = catchAsync(async (req, res, next) => {
 });
 
 exports.logout = async (req, res) => {
-  req.session.isAuthorized = false;
-
   const { statusCode, body } = await getAsync({
     url: `${process.env.SSO_URL}logout`,
     rejectUnauthorized: false
@@ -92,7 +90,7 @@ exports.logout = async (req, res) => {
   console.log('statusCode', statusCode);
   console.log('body', body);
 
-  res.cookie('jwt', 'loggedout', {
+  res.cookie('jwt_dn', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
@@ -104,8 +102,8 @@ exports.protect = catchAsync(async (req, res, next) => {
   let token;
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+  } else if (req.cookies.jwt_dn) {
+    token = req.cookies.jwt_dn;
   }
 
   if (!token) {
@@ -134,10 +132,11 @@ exports.protect = catchAsync(async (req, res, next) => {
 
 // Only for rendered pages, no errors!
 exports.isLoggedIn = async (req, res, next) => {
-  if (req.session.isAuthorized && req.cookies.jwt) {
+  console.log('** isLoggedIn');
+  if (req.cookies.jwt_dn) {
     try {
       // 1) verify token
-      const decoded = await promisify(jwt.verify)(req.cookies.jwt, process.env.JWT_SECRET);
+      const decoded = await promisify(jwt.verify)(req.cookies.jwt_dn, process.env.JWT_SECRET);
       console.log(decoded);
 
       // 2) Check if user still exists
@@ -151,6 +150,7 @@ exports.isLoggedIn = async (req, res, next) => {
       res.locals.user = currentUser;
       return next();
     } catch (err) {
+      console.log('isLoggedIn: user not logined');
       return next();
     }
   }
@@ -158,18 +158,14 @@ exports.isLoggedIn = async (req, res, next) => {
 };
 
 exports.ensureSingleSignOn = async (req, res, next) => {
-  if (!req.session.isAuthorized) {
-    // req.session.redirectURL = req.originalUrl || req.url;
-    req.session.redirectURL = '/';
-    res.redirect(
-      `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${
-        process.env.SSO_REDIRECT_URL
-      }&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
-    );
-  } else {
-    res.locals.user = req.session.user;
-    next();
-  }
+  console.log('** ensureSingleSignOn');
+  // req.session.redirectURL = req.originalUrl || req.url;
+  req.session.redirectURL = '/';
+  res.redirect(
+    `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${
+      process.env.SSO_REDIRECT_URL
+    }&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+  );
 };
 
 /**
@@ -212,7 +208,6 @@ exports.ssoReceiveToken = async (req, res, next) => {
     if (statusCode === 200 && accessToken != null) {
       req.session.accessToken = accessToken;
       req.session.refreshToken = refreshToken;
-      req.session.isAuthorized = true;
       const expirationDate = expiresIn ? new Date(Date.now() + expiresIn * 1000) : null;
 
       const userInfoObj = await getAsync({
