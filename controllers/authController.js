@@ -133,15 +133,12 @@ exports.isLoggedIn = async (req, res, next) => {
     try {
       // 1) verify token
       const decoded = await promisify(jwt.verify)(req.cookies.jwt_dn, process.env.JWT_SECRET);
-      console.log(decoded);
-
       // 2) Check if user still exists
       const currentUser = await User.findById(decoded.id);
       console.log(currentUser);
       if (!currentUser) {
         return next();
       }
-
       // THERE IS A LOGGED IN USER
       res.locals.user = currentUser;
       return next();
@@ -149,6 +146,17 @@ exports.isLoggedIn = async (req, res, next) => {
       console.log('isLoggedIn: user not logined');
       return next();
     }
+  } else if (!req.session.loginCheck) {
+    // check if its authenticated on Auth server
+    req.session.loginCheck = true;
+    req.session.redirectURL = '/';
+    // const originalUrl = `${req.protocol}://${req.get('host')}`;
+    const originalUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+    res.redirect(
+      `${process.env.SSO_CHECKLOGIN_URL}?redirect_original=${originalUrl}&redirect_uri=${
+        process.env.SSO_REDIRECT_URL
+      }&response_type=code&client_id=${process.env.CLIENT_ID}&scope=offline_access`
+    );
   }
   next();
 };
