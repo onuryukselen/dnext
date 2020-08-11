@@ -87,8 +87,8 @@ exports.logout = async (req, res) => {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
-  console.log('** redirect:', `${process.env.SSO_URL}?redirect_uri=${req.originalUrl}`);
-  res.redirect(`${process.env.SSO_URL}api/v1/users/logout?redirect_uri=${req.originalUrl}`);
+  const rootUrl = `${req.protocol}://${req.get('host')}`;
+  res.redirect(`${process.env.SSO_URL}api/v1/users/logout?redirect_uri=${rootUrl}`);
 
   // res.status(200).json({ status: 'success' });
 };
@@ -155,8 +155,9 @@ exports.isLoggedIn = async (req, res, next) => {
 
 exports.ensureSingleSignOn = async (req, res, next) => {
   console.log('** ensureSingleSignOn');
-  // req.session.redirectURL = req.originalUrl || req.url;
-  req.session.redirectURL = req.originalUrl;
+  // req.session.redirectURL = req.originalUrl -> triggers loop after redirect
+  // req.session.redirectURL = req.originalUrl || req.url; -> triggers loop after redirect
+  req.session.redirectURL = '/';
   res.redirect(
     `${process.env.SSO_AUTHORIZE_URL}?redirect_uri=${
       process.env.SSO_REDIRECT_URL
